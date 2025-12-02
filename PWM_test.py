@@ -2,8 +2,8 @@
 import RPi.GPIO as GPIO
 from time import sleep
 
-SpeedPin = 12
-DirectionPin = 4
+SpeedPin = 17
+DirectionPin = 18
 
 GPIO.cleanup()
 GPIO.setwarnings(False)         #disable warnings
