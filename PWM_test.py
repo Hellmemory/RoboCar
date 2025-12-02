@@ -6,8 +6,10 @@ SpeedPin = 17
 DirectionPin = 18
 
 GPIO.cleanup()
-GPIO.setwarnings(False)         #disable warnings
-GPIO.setmode(GPIO.BCM)  #set pin numbering system
+GPIO.setwarnings(False)
+#disable warnings
+GPIO.setmode(GPIO.BCM)
+#set pin numbering system
 GPIO.setup(SpeedPin,GPIO.OUT)
 GPIO.setup(DirectionPin,GPIO.OUT)
 
