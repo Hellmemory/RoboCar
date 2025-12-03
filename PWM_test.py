@@ -2,16 +2,14 @@
 import RPi.GPIO as GPIO
 import time
 
-# Налаштування GPIO
 GPIO.setmode(GPIO.BCM)
 pins = {
-    "DIR1": 17, "PWM1": 18,   # Переднє ліве
-    "DIR2": 22, "PWM2": 23,   # Переднє праве
-    "DIR3": 24, "PWM3": 25,   # Заднє ліве
-    "DIR4": 5,  "PWM4": 6     # Заднє праве
+    "DIR1": 17, "PWM1": 18,
+    "DIR2": 22, "PWM2": 23,
+    "DIR3": 24, "PWM3": 25,
+    "DIR4": 5,  "PWM4": 6
 }
 
-# Сенсори
 LEFT_SENSOR = 4
 RIGHT_SENSOR = 12
 
@@ -19,11 +17,11 @@ RIGHT_SENSOR = 12
 for pin in pins.values():
     GPIO.setup(pin, GPIO.OUT)
 
-# Налаштування сенсорів
+# Сенсори
 GPIO.setup(LEFT_SENSOR, GPIO.IN)
 GPIO.setup(RIGHT_SENSOR, GPIO.IN)
 
-# PWM для кожного колеса
+# PWM
 pwm1 = GPIO.PWM(pins["PWM1"], 100)
 pwm2 = GPIO.PWM(pins["PWM2"], 100)
 pwm3 = GPIO.PWM(pins["PWM3"], 100)
@@ -36,17 +34,12 @@ def set_motor(dir_pin, pwm_obj, direction, speed):
     GPIO.output(dir_pin, direction)
     pwm_obj.ChangeDutyCycle(speed)
 
-def move(action, speed=70):  # Зменшена швидкість
+def move(action, speed=50):
     if action == "forward":
         set_motor(pins["DIR1"], pwm1, True, speed)
         set_motor(pins["DIR2"], pwm2, True, speed)
         set_motor(pins["DIR3"], pwm3, True, speed)
         set_motor(pins["DIR4"], pwm4, True, speed)
-    elif action == "backward":
-        set_motor(pins["DIR1"], pwm1, False, speed)
-        set_motor(pins["DIR2"], pwm2, False, speed)
-        set_motor(pins["DIR3"], pwm3, False, speed)
-        set_motor(pins["DIR4"], pwm4, False, speed)
     elif action == "left":
         set_motor(pins["DIR1"], pwm1, False, speed)
         set_motor(pins["DIR2"], pwm2, True, speed)
@@ -62,29 +55,23 @@ def move(action, speed=70):  # Зменшена швидкість
             pwm.ChangeDutyCycle(0)
 
 try:
-    print("Керування: W-вперед, S-назад, A-вліво, D-вправо, X-стоп, Q-вихід")
+    print("Following black line")
     while True:
-        # Читання сенсорів
         left = GPIO.input(LEFT_SENSOR)
         right = GPIO.input(RIGHT_SENSOR)
-        print(f"Left: {'BLACK' if left == 0 else 'WHITE'} | Right: {'BLACK' if right == 0 else 'WHITE'}")
 
-        cmd = input("Введіть команду: ").strip().lower()
-        if cmd == "w":
+        # Логіка: реагує тільки на чорний (0)
+        if left == 0 and right == 0:
             move("forward")
-        elif cmd == "s":
-            move("backward")
-        elif cmd == "a":
+        elif left == 0 and right == 1:
             move("left")
-        elif cmd == "d":
+        elif left == 1 and right == 0:
             move("right")
-        elif cmd == "x":
-            move("stop")
-        elif cmd == "q":
-            print("Вихід...")
-            break
         else:
-            print("Невідома команда!")
+            move("stop")
+
+        time.sleep(0.1)
+
 finally:
     pwm1.stop()
     pwm2.stop()
