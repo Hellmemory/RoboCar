@@ -46,3 +46,33 @@ def move(action, speed=30):  # Зменшена швидкість
         set_motor(pins["DIR1"], pwm1, True, speed)
         set_motor(pins["DIR2"], pwm2, False, speed)
         set_motor(pins["DIR3"], pwm3, True, speed)
+        set_motor(pins["DIR4"], pwm4, False, speed)
+    elif action == "stop":
+        for pwm in [pwm1, pwm2, pwm3, pwm4]:
+            pwm.ChangeDutyCycle(0)
+
+try:
+    print("Керування: W-вперед, S-назад, A-вліво, D-вправо, X-стоп, Q-вихід")
+    while True:
+        cmd = input("Введіть команду: ").strip().lower()
+        if cmd == "w":
+            move("forward")
+        elif cmd == "s":
+            move("backward")
+        elif cmd == "a":
+            move("left")
+        elif cmd == "d":
+            move("right")
+        elif cmd == "x":
+            move("stop")
+        elif cmd == "q":
+            print("Вихід...")
+            break
+        else:
+            print("Невідома команда!")
+finally:
+    pwm1.stop()
+    pwm2.stop()
+    pwm3.stop()
+    pwm4.stop()
+    GPIO.cleanup()
