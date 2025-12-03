@@ -1,5 +1,6 @@
 
 import RPi.GPIO as GPIO
+import time
 
 # Налаштування GPIO
 GPIO.setmode(GPIO.BCM)
@@ -10,8 +11,17 @@ pins = {
     "DIR4": 5,  "PWM4": 6     # Заднє праве
 }
 
+# Сенсори
+LEFT_SENSOR = 4
+RIGHT_SENSOR = 12
+
+# Налаштування моторів
 for pin in pins.values():
     GPIO.setup(pin, GPIO.OUT)
+
+# Налаштування сенсорів
+GPIO.setup(LEFT_SENSOR, GPIO.IN)
+GPIO.setup(RIGHT_SENSOR, GPIO.IN)
 
 # PWM для кожного колеса
 pwm1 = GPIO.PWM(pins["PWM1"], 100)
@@ -54,6 +64,11 @@ def move(action, speed=70):  # Зменшена швидкість
 try:
     print("Керування: W-вперед, S-назад, A-вліво, D-вправо, X-стоп, Q-вихід")
     while True:
+        # Читання сенсорів
+        left = GPIO.input(LEFT_SENSOR)
+        right = GPIO.input(RIGHT_SENSOR)
+        print(f"Left: {'BLACK' if left == 0 else 'WHITE'} | Right: {'BLACK' if right == 0 else 'WHITE'}")
+
         cmd = input("Введіть команду: ").strip().lower()
         if cmd == "w":
             move("forward")
