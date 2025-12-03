@@ -1,6 +1,5 @@
-
 import RPi.GPIO as GPIO
-import keyboard  # Потрібно встановити: pip install keyboard
+import keyboard  
 import time
 
 # Налаштування GPIO
