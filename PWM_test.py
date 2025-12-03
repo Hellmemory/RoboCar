@@ -1,11 +1,10 @@
 
 import RPi.GPIO as GPIO
-from sshkeyboard import listen_keyboard
 
 # Налаштування GPIO
 GPIO.setmode(GPIO.BCM)
 pins = {
-    "DIR1": 17, "PWM1": 18,   # Переднє ліве ff
+    "DIR1": 17, "PWM1": 18,   # Переднє ліве
     "DIR2": 22, "PWM2": 23,   # Переднє праве
     "DIR3": 24, "PWM3": 25,   # Заднє ліве
     "DIR4": 5,  "PWM4": 6     # Заднє праве
@@ -27,7 +26,7 @@ def set_motor(dir_pin, pwm_obj, direction, speed):
     GPIO.output(dir_pin, direction)
     pwm_obj.ChangeDutyCycle(speed)
 
-def move(action, speed=30):
+def move(action, speed=30):  # Зменшена швидкість
     if action == "forward":
         set_motor(pins["DIR1"], pwm1, True, speed)
         set_motor(pins["DIR2"], pwm2, True, speed)
@@ -45,3 +44,5 @@ def move(action, speed=30):
         set_motor(pins["DIR4"], pwm4, True, speed)
     elif action == "right":
         set_motor(pins["DIR1"], pwm1, True, speed)
+        set_motor(pins["DIR2"], pwm2, False, speed)
+        set_motor(pins["DIR3"], pwm3, True, speed)
