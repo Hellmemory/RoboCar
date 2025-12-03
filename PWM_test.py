@@ -1,5 +1,6 @@
 
 import RPi.GPIO as GPIO
+import keyboard  # Потрібно встановити: pip install keyboard
 import time
 
 # Налаштування GPIO
@@ -11,7 +12,6 @@ pins = {
     "DIR4": 5,  "PWM4": 6     # Заднє праве
 }
 
-# Ініціалізація пінів
 for pin in pins.values():
     GPIO.setup(pin, GPIO.OUT)
 
@@ -28,7 +28,7 @@ def set_motor(dir_pin, pwm_obj, direction, speed):
     GPIO.output(dir_pin, direction)
     pwm_obj.ChangeDutyCycle(speed)
 
-def move(action, speed=20):
+def move(action, speed=30):  # Зменшена швидкість
     if action == "forward":
         set_motor(pins["DIR1"], pwm1, True, speed)
         set_motor(pins["DIR2"], pwm2, True, speed)
@@ -54,15 +54,21 @@ def move(action, speed=20):
             pwm.ChangeDutyCycle(0)
 
 try:
-    print("Команди: forward, backward, left, right, stop, exit")
+    print("Керування: ↑ вперед, ↓ назад, ← вліво, → вправо, Space = стоп, Esc = вихід")
     while True:
-        cmd = input("Введіть команду: ").strip().lower()
-        if cmd == "exit":
+        if keyboard.is_pressed("up"):
+            move("forward")
+        elif keyboard.is_pressed("down"):
+            move("backward")
+        elif keyboard.is_pressed("left"):
+            move("left")
+        elif keyboard.is_pressed("right"):
+            move("right")
+        elif keyboard.is_pressed("space"):
+            move("stop")
+        elif keyboard.is_pressed("esc"):
             break
-        elif cmd in ["forward", "backward", "left", "right", "stop"]:
-            move(cmd)
-        else:
-            print("Невідома команда!")
+        time.sleep(0.1)
 finally:
     pwm1.stop()
     pwm2.stop()
