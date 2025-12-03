@@ -5,7 +5,7 @@ from sshkeyboard import listen_keyboard
 # Налаштування GPIO
 GPIO.setmode(GPIO.BCM)
 pins = {
-    "DIR1": 17, "PWM1": 18,   # Переднє ліве
+    "DIR1": 17, "PWM1": 18,   # Переднє ліве ff
     "DIR2": 22, "PWM2": 23,   # Переднє праве
     "DIR3": 24, "PWM3": 25,   # Заднє ліве
     "DIR4": 5,  "PWM4": 6     # Заднє праве
