@@ -28,7 +28,7 @@ def set_motor(dir_pin, pwm_obj, direction, speed):
     GPIO.output(dir_pin, direction)
     pwm_obj.ChangeDutyCycle(speed)
 
-def move(action, speed=50):
+def move(action, speed=20):
     if action == "forward":
         set_motor(pins["DIR1"], pwm1, True, speed)
         set_motor(pins["DIR2"], pwm2, True, speed)
