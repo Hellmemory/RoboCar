@@ -127,7 +127,7 @@ try:
                 set_motor(pins["DIR3"], pwm3, direction, right_speed)
                 set_motor(pins["DIR4"], pwm4, direction, right_speed)
             else:
-                # Якщо тільки A або D (чистий поворот на місці)
+                # Якщо тільки A або D (чистий поворот на місціі)
                 if "a" in keys_pressed:
                     set_motor(pins["DIR1"], pwm1, False, turn_speed)
                     set_motor(pins["DIR2"], pwm2, False, turn_speed)
@@ -143,4 +143,4 @@ try:
 
 finally:
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
-    stop_all()
+    stop_all()           
