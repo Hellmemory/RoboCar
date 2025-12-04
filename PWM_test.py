@@ -44,7 +44,7 @@ def stop():
         pwm.ChangeDutyCycle(0)
 
 try:
-    print("Автономний режим: плавне слідування по чорній лінії")
+    print("Автономний режим: слідування по чорній лінії")
     while True:
         left = GPIO.input(LEFT_SENSOR)
         right = GPIO.input(RIGHT_SENSOR)
@@ -52,17 +52,13 @@ try:
         print(f"Left: {'BLACK' if left == 0 else 'WHITE'} | Right: {'BLACK' if right == 0 else 'WHITE'}")
 
         if left == 0 and right == 0:
-            # Обидва на чорному → прямо
-            move(50, 50)
+            move(50, 50)  # прямо
         elif left == 0 and right == 1:
-            # Лівий чорний → плавно вліво
-            move(70, 30)
+            move(70, 30)  # плавно вліво
         elif left == 1 and right == 0:
-            # Правий чорний → плавно вправо
-            move(30, 70)
+            move(30, 70)  # плавно вправо
         else:
-            # Обидва білі → зупинка
-            stop()
+            stop()  # обидва білі → стоп  у
 
         time.sleep(0.1)
 
