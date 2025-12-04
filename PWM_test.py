@@ -104,3 +104,49 @@ try:
 
             # Комбінації
             if "w" in keys_pressed and "d" in keys_pressed:  # вперед + вправо
+                set_motor(pins["DIR1"], pwm1, True, turn_speed)
+                set_motor(pins["DIR2"], pwm2, True, forward_speed)
+                set_motor(pins["DIR3"], pwm3, True, turn_speed)
+                set_motor(pins["DIR4"], pwm4, True, forward_speed)
+            elif "w" in keys_pressed and "a" in keys_pressed:  # вперед + вліво
+                set_motor(pins["DIR1"], pwm1, True, forward_speed)
+                set_motor(pins["DIR2"], pwm2, True, turn_speed)
+                set_motor(pins["DIR3"], pwm3, True, forward_speed)
+                set_motor(pins["DIR4"], pwm4, True, turn_speed)
+            elif "s" in keys_pressed and "d" in keys_pressed:  # назад + вправо
+                set_motor(pins["DIR1"], pwm1, False, turn_speed)
+                set_motor(pins["DIR2"], pwm2, False, forward_speed)
+                set_motor(pins["DIR3"], pwm3, False, turn_speed)
+                set_motor(pins["DIR4"], pwm4, False, forward_speed)
+            elif "s" in keys_pressed and "a" in keys_pressed:  # назад + вліво
+                set_motor(pins["DIR1"], pwm1, False, forward_speed)
+                set_motor(pins["DIR2"], pwm2, False, turn_speed)
+                set_motor(pins["DIR3"], pwm3, False, forward_speed)
+                set_motor(pins["DIR4"], pwm4, False, turn_speed)
+            elif "w" in keys_pressed:  # тільки вперед
+                set_motor(pins["DIR1"], pwm1, True, forward_speed)
+                set_motor(pins["DIR2"], pwm2, True, forward_speed)
+                set_motor(pins["DIR3"], pwm3, True, forward_speed)
+                set_motor(pins["DIR4"], pwm4, True, forward_speed)
+            elif "s" in keys_pressed:  # тільки назад
+                set_motor(pins["DIR1"], pwm1, False, forward_speed)
+                set_motor(pins["DIR2"], pwm2, False, forward_speed)
+                set_motor(pins["DIR3"], pwm3, False, forward_speed)
+                set_motor(pins["DIR4"], pwm4, False, forward_speed)
+            elif "a" in keys_pressed:  # тільки вліво
+                set_motor(pins["DIR1"], pwm1, False, turn_speed)
+                set_motor(pins["DIR2"], pwm2, True, turn_speed)
+                set_motor(pins["DIR3"], pwm3, False, turn_speed)
+                set_motor(pins["DIR4"], pwm4, True, turn_speed)
+            elif "d" in keys_pressed:  # тільки вправо
+                set_motor(pins["DIR1"], pwm1, True, turn_speed)
+                set_motor(pins["DIR2"], pwm2, False, turn_speed)
+                set_motor(pins["DIR3"], pwm3, True, turn_speed)
+                set_motor(pins["DIR4"], pwm4, False, turn_speed)
+
+        time.sleep(0.05)
+
+finally:
+    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+    stop_all()
+    GPIO.cleanup()
