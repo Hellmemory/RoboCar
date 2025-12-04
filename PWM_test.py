@@ -37,7 +37,7 @@ for pwm in [pwm1, pwm2, pwm3, pwm4]:
     pwm.start(0)
 
 def set_motor(dir_pin, pwm_obj, direction, speed):
-    GPIO.output(dir_pin, direction)
+    GPIO.output(dir_pin, GPIO.HIGH if direction else GPIO.LOW)
     pwm_obj.ChangeDutyCycle(speed)
 
 def move(action, speed=50):
@@ -83,7 +83,7 @@ def get_distance():
     return distance
 
 try:
-#ручний режим: W/S/A/D для руху, X - стоп, Q - вихід")
+    print("Ручний режим: W/S/A/D для руху, X - стоп, Q - вихід, +/- змінити швидкість")
     speed = 50
     while True:
         # Читаємо сенсори
@@ -95,8 +95,7 @@ try:
         # Керування
         if keyboard.is_pressed("w"):
             move("forward", speed)
-        elif keyboard.is_pressed("s"):
-            move("backward", speed)
+       ward", speed)
         elif keyboard.is_pressed("a"):
             move("left", speed)
         elif keyboard.is_pressed("d"):
