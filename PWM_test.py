@@ -1,7 +1,10 @@
 
 import RPi.GPIO as GPIO
 import time
-import keyboard  # pip install keyboard
+import sys
+import termios
+import tty
+import select
 
 GPIO.setmode(GPIO.BCM)
 
@@ -82,38 +85,50 @@ def get_distance():
     distance = (elapsed * 34300) / 2
     return distance
 
+# Функція для неблокуючого читання клавіш
+def get_key():
+    dr, dw, de = select.select([sys.stdin], [], [], 0)
+    if dr:
+        return sys.stdin.read(1)
+   тування терміналу
+old_settings = termios.tcgetattr(sys.stdin)
+tty.setcbreak(sys.stdin.fileno())
+
 try:
     print("Ручний режим: W/S/A/D для руху, X - стоп, Q - вихід, +/- змінити швидкість")
     speed = 50
     while True:
+        key = get_key()
+
         # Читаємо сенсори
         left = GPIO.input(LEFT_SENSOR)
         right = GPIO.input(RIGHT_SENSOR)
         dist = get_distance()
         print(f"Left: {'BLACK' if left == 1 else 'WHITE'} | Right: {'BLACK' if right == 1 else 'WHITE'} | Distance: {dist:.1f} cm | Speed: {speed}")
 
-        # Керування без очікування команд
-        if keyboard.is_pressed("w"):
-            move("forward", speed)
-        elif keyboard.is_pressed("s"):
-            move("backward", speed)
-        elif keyboard.is_pressed("a"):
-            move("left", speed)
-        elif keyboard.is_pressed("d"):
-            move("right", speed)
-        elif keyboard.is_pressed("x"):
-            move("stop")
-        elif keyboard.is_pressed("+"):
-            speed = min(100, speed + 10)
-        elif keyboard.is_pressed("-"):
-            speed = max(10, speed - 10)
-        elif keyboard.is_pressed("q"):
-            print("Вихід...")
-            break
+        if key:
+            if key.lower() == "w":
+                move("forward", speed)
+            elif key.lower() == "s":
+                move("backward", speed)
+            elif key.lower() == "a":
+                move("left", speed)
+            elif key.lower() == "d":
+                move("right", speed)
+            elif key.lower() == "x":
+                move("stop")
+            elif key.lower() == "q":
+                print("Вихід...")
+                break
+            elif key == "+":
+                speed = min(100, speed + 10)
+            elif key == "-":
+                speed = max(10, speed - 10)
         else:
-            move("stop")  # Якщо нічого не натиснуто    ж
+            move("stop")  # Якщо нічого не натиснуто
 
         time.sleep(0.05)
 
 finally:
+    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
     move("stop")
