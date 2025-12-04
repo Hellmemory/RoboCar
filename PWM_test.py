@@ -1,9 +1,11 @@
 
 import RPi.GPIO as GPIO
 import time
-import keyboard  # Потрібно встановити: pip install keyboard
+import keyboard  # pip install keyboard
 
 GPIO.setmode(GPIO.BCM)
+
+# Піни для моторів
 pins = {
     "DIR1": 17, "PWM1": 18,
     "DIR2": 22, "PWM2": 23,
@@ -11,6 +13,7 @@ pins = {
     "DIR4": 5,  "PWM4": 6
 }
 
+# Сенсори
 LEFT_SENSOR = 4
 RIGHT_SENSOR = 12
 TRIG = 20
@@ -29,6 +32,7 @@ pwm1 = GPIO.PWM(pins["PWM1"], 100)
 pwm2 = GPIO.PWM(pins["PWM2"], 100)
 pwm3 = GPIO.PWM(pins["PWM3"], 100)
 pwm4 = GPIO.PWM(pins["PWM4"], 100)
+
 for pwm in [pwm1, pwm2, pwm3, pwm4]:
     pwm.start(0)
 
@@ -36,27 +40,23 @@ def set_motor(dir_pin, pwm_obj, direction, speed):
     GPIO.output(dir_pin, direction)
     pwm_obj.ChangeDutyCycle(speed)
 
-def move(action):
+def move(action, speed=50):
     if action == "forward":
-        speed = 50
         set_motor(pins["DIR1"], pwm1, True, speed)
         set_motor(pins["DIR2"], pwm2, True, speed)
         set_motor(pins["DIR3"], pwm3, True, speed)
         set_motor(pins["DIR4"], pwm4, True, speed)
     elif action == "backward":
-        speed = 50
         set_motor(pins["DIR1"], pwm1, False, speed)
         set_motor(pins["DIR2"], pwm2, False, speed)
         set_motor(pins["DIR3"], pwm3, False, speed)
         set_motor(pins["DIR4"], pwm4, False, speed)
     elif action == "left":
-        speed = 100
         set_motor(pins["DIR1"], pwm1, False, speed)
         set_motor(pins["DIR2"], pwm2, True, speed)
         set_motor(pins["DIR3"], pwm3, False, speed)
         set_motor(pins["DIR4"], pwm4, True, speed)
     elif action == "right":
-        speed = 100
         set_motor(pins["DIR1"], pwm1, True, speed)
         set_motor(pins["DIR2"], pwm2, False, speed)
         set_motor(pins["DIR3"], pwm3, True, speed)
@@ -73,45 +73,47 @@ def get_distance():
     start = time.time()
     stop = time.time()
 
-    while GPIOть режим: M - Ручний, A - Автономний: ").strip().lower()
+    while GPIO.input(ECHO) == 0:
+        start = time.time()
+    while GPIO.input(ECHO) == 1:
+        stop = time.time()
 
-    if mode == "m":
-        print("Ручний режим: натискай W/S/A/D, X - стоп, Q - вихід")
-        while True:
-            if keyboard.is_pressed("w"):
-                move("forward")
-            elif keyboard.is_pressed("s"):
-                move("backward")
-            elif keyboard.is_pressed("a"):
-                           elif keyboard.is_pressed("q"):
-                print("Вихід...")
-                break
-            else:
-                move("stop")  # Якщо нічого не натиснуто
-            time.sleep(0.05)
+    elapsed = stop - start
+    distance = (elapsed * 34300) / 2
+    return distance
 
-    elif mode == "a":
-        print("Автономний режим: їде по чорній лінії, зупиняється на білому або перешкоді")
-        while True:
-            left = GPIO.input(LEFT_SENSOR)
-            right = GPIO.input(RIGHT_SENSOR)
-            dist = get_distance()
+try:
+#ручний режим: W/S/A/D для руху, X - стоп, Q - вихід")
+    speed = 50
+    while True:
+        # Читаємо сенсори
+        left = GPIO.input(LEFT_SENSOR)
+        right = GPIO.input(RIGHT_SENSOR)
+        dist = get_distance()
+        print(f"Left: {'BLACK' if left == 1 else 'WHITE'} | Right: {'BLACK' if right == 1 else 'WHITE'} | Distance: {dist:.1f} cm | Speed: {speed}")
 
-            print(f"Left: {'BLACK' if left == 1 else 'WHITE'} | Right: {'BLACK' if right == 1 else 'WHITE'} | Distance: {dist:.1f} cm")
+        # Керування
+        if keyboard.is_pressed("w"):
+            move("forward", speed)
+        elif keyboard.is_pressed("s"):
+            move("backward", speed)
+        elif keyboard.is_pressed("a"):
+            move("left", speed)
+        elif keyboard.is_pressed("d"):
+            move("right", speed)
+        elif keyboard.is_pressed("x"):
+            move("stop")
+        elif keyboard.is_pressed("q"):
+            print("Вихід...")
+            break
+        elif keyboard.is_pressed("+"):
+            speed = min(100, speed + 10)
+        elif keyboard.is_pressed("-"):
+            speed = max(10, speed - 10)
+        else:
+            move("stop")
 
-            if dist < 20:
-                move("stop")
-                print("Перешкода! Зупинка.")
-            elif left == 1 and right == 1:
-                move("forward")
-            elif left == 1 and right == 0:
-                move("left")
-            elif left == 0 and right == 1:
-                move("right")
-            else:
-                move("stop")
-
-            time.sleep(0.1)
+        time.sleep(0.1)
 
 finally:
     move("stop")
