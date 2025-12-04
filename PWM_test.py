@@ -92,7 +92,7 @@ try:
         dist = get_distance()
         print(f"Left: {'BLACK' if left == 1 else 'WHITE'} | Right: {'BLACK' if right == 1 else 'WHITE'} | Distance: {dist:.1f} cm | Speed: {speed}")
 
-        # Керування
+        # Керування jj
         if keyboard.is_pressed("w"):
             move("forward", speed) 
         elif keyboard.is_pressed("a"):
