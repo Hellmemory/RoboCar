@@ -43,30 +43,9 @@ def set_motor(dir_pin, pwm_obj, direction, speed):
     GPIO.output(dir_pin, GPIO.HIGH if direction else GPIO.LOW)
     pwm_obj.ChangeDutyCycle(speed)
 
-def move(action, speed=50):
-    if action == "forward":
-        set_motor(pins["DIR1"], pwm1, True, speed)
-        set_motor(pins["DIR2"], pwm2, True, speed)
-        set_motor(pins["DIR3"], pwm3, True, speed)
-        set_motor(pins["DIR4"], pwm4, True, speed)
-    elif action == "backward":
-        set_motor(pins["DIR1"], pwm1, False, speed)
-        set_motor(pins["DIR2"], pwm2, False, speed)
-        set_motor(pins["DIR3"], pwm3, False, speed)
-        set_motor(pins["DIR4"], pwm4, False, speed)
-    elif action == "left":
-        set_motor(pins["DIR1"], pwm1, False, speed)
-        set_motor(pins["DIR2"], pwm2, True, speed)
-        set_motor(pins["DIR3"], pwm3, False, speed)
-        set_motor(pins["DIR4"], pwm4, True, speed)
-    elif action == "right":
-        set_motor(pins["DIR1"], pwm1, True, speed)
-        set_motor(pins["DIR2"], pwm2, False, speed)
-        set_motor(pins["DIR3"], pwm3, True, speed)
-        set_motor(pins["DIR4"], pwm4, False, speed)
-    elif action == "stop":
-        for pwm in [pwm1, pwm2, pwm3, pwm4]:
-            pwm.ChangeDutyCycle(0)
+def stop_all():
+    for pwm in [pwm1, pwm2, pwm3, pwm4]:
+        pwm.ChangeDutyCycle(0)
 
 def get_distance():
     GPIO.output(TRIG, True)
@@ -85,50 +64,43 @@ def get_distance():
     distance = (elapsed * 34300) / 2
     return distance
 
-# Функція для неблокуючого читання клавіш
+# Неблокуюче читання клавіш
 def get_key():
     dr, dw, de = select.select([sys.stdin], [], [], 0)
     if dr:
         return sys.stdin.read(1)
-  
+
+# Налаштування терміналу
 old_settings = termios.tcgetattr(sys.stdin)
 tty.setcbreak(sys.stdin.fileno())
 
 try:
-    print("Ручний режим: W/S/A/D для руху, X - стоп, Q - вихід, +/- змінити швидкість")
-    speed = 50
+    print("Ручний режим: W/S/A/D для руху, X - стоп, Q - вихід")
     while True:
         key = get_key()
+        keys_pressed = []
+
+        # Збираємо всі натиснуті клавіші
+        while key:
+            keys_pressed.append(key.lower())
+            key = get_key()
 
         # Читаємо сенсори
         left = GPIO.input(LEFT_SENSOR)
         right = GPIO.input(RIGHT_SENSOR)
         dist = get_distance()
-        print(f"Left: {'BLACK' if left == 1 else 'WHITE'} | Right: {'BLACK' if right == 1 else 'WHITE'} | Distance: {dist:.1f} cm | Speed: {speed}")
+        print(f"Left: {'BLACK' if left else 'WHITE'} | Right: {'BLACK' if right else 'WHITE'} | Distance: {dist:.1f} cm")
 
-        if key:
-            if key.lower() == "w":
-                move("forward", speed)
-            elif key.lower() == "s":
-                move("backward", speed)
-            elif key.lower() == "a":
-                move("left", speed)
-            elif key.lower() == "d":
-                move("right", speed)
-            elif key.lower() == "x":
-                move("stop")
-            elif key.lower() == "q":
-                print("Вихід...")
-                break
-            elif key == "+":
-                speed = min(100, speed + 10)
-            elif key == "-":
-                speed = max(10, speed - 10)
+        # Логіка руху
+        if "q" in keys_pressed:
+            print("Вихід...")
+            break
+
+        if "x" in keys_pressed or not keys_pressed:
+            stop_all()
         else:
-            move("stop")  # Якщо нічого не натиснуто
+            forward_speed = 50
+            turn_speed = 90
 
-        time.sleep(0.05)
-
-finally:
-    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
-    move("stop")
+            # Комбінації
+            if "w" in keys_pressed and "d" in keys_pressed:  # вперед + вправо
