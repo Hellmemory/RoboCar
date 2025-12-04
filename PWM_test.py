@@ -90,7 +90,7 @@ def get_key():
     dr, dw, de = select.select([sys.stdin], [], [], 0)
     if dr:
         return sys.stdin.read(1)
-   тування терміналу
+  
 old_settings = termios.tcgetattr(sys.stdin)
 tty.setcbreak(sys.stdin.fileno())
 
