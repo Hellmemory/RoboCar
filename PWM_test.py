@@ -92,27 +92,28 @@ try:
         dist = get_distance()
         print(f"Left: {'BLACK' if left == 1 else 'WHITE'} | Right: {'BLACK' if right == 1 else 'WHITE'} | Distance: {dist:.1f} cm | Speed: {speed}")
 
-        # Керування jj
+        # Керування без очікування команд
         if keyboard.is_pressed("w"):
-            move("forward", speed) 
+            move("forward", speed)
+        elif keyboard.is_pressed("s"):
+            move("backward", speed)
         elif keyboard.is_pressed("a"):
             move("left", speed)
         elif keyboard.is_pressed("d"):
             move("right", speed)
         elif keyboard.is_pressed("x"):
             move("stop")
-        elif keyboard.is_pressed("q"):
-            print("Вихід...")
-            break
         elif keyboard.is_pressed("+"):
             speed = min(100, speed + 10)
         elif keyboard.is_pressed("-"):
             speed = max(10, speed - 10)
+        elif keyboard.is_pressed("q"):
+            print("Вихід...")
+            break
         else:
-            move("stop")
+            move("stop")  # Якщо нічого не натиснуто
 
-        time.sleep(0.1)
+        time.sleep(0.05)
 
 finally:
     move("stop")
-    GPIO.cleanup()
