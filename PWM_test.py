@@ -31,31 +31,20 @@ def set_motor(dir_pin, pwm_obj, direction, speed):
     GPIO.output(dir_pin, direction)
     pwm_obj.ChangeDutyCycle(speed)
 
-def move(action):
-    if action == "forward":
-        speed = 50
-        set_motor(pins["DIR1"], pwm1, True, speed)
-        set_motor(pins["DIR2"], pwm2, True, speed)
-        set_motor(pins["DIR3"], pwm3, True, speed)
-        set_motor(pins["DIR4"], pwm4, True, speed)
-    elif action == "left":
-        speed = 100
-        set_motor(pins["DIR1"], pwm1, False, speed)
-        set_motor(pins["DIR2"], pwm2, True, speed)
-        set_motor(pins["DIR3"], pwm3, False, speed)
-        set_motor(pins["DIR4"], pwm4, True, speed)
-    elif action == "right":
-        speed = 100
-        set_motor(pins["DIR1"], pwm1, True, speed)
-        set_motor(pins["DIR2"], pwm2, False, speed)
-        set_motor(pins["DIR3"], pwm3, True, speed)
-        set_motor(pins["DIR4"], pwm4, False, speed)
-    elif action == "stop":
-        for pwm in [pwm1, pwm2, pwm3, pwm4]:
-            pwm.ChangeDutyCycle(0)
+def move(left_speed, right_speed):
+    # Ліві колеса
+    set_motor(pins["DIR1"], pwm1, True, left_speed)
+    set_motor(pins["DIR3"], pwm3, True, left_speed)
+    # Праві колеса
+    set_motor(pins["DIR2"], pwm2, True, right_speed)
+    set_motor(pins["DIR4"], pwm4, True, right_speed)
+
+def stop():
+    for pwm in [pwm1, pwm2, pwm3, pwm4]:
+        pwm.ChangeDutyCycle(0)
 
 try:
-    print("Автономний режим: слідування по чорній лінії")
+    print("Автономний режим: плавне слідування по чорній лінії")
     while True:
         left = GPIO.input(LEFT_SENSOR)
         right = GPIO.input(RIGHT_SENSOR)
@@ -63,19 +52,20 @@ try:
         print(f"Left: {'BLACK' if left == 0 else 'WHITE'} | Right: {'BLACK' if right == 0 else 'WHITE'}")
 
         if left == 0 and right == 0:
-            move("forward")
+            # Обидва на чорному → прямо
+            move(50, 50)
         elif left == 0 and right == 1:
-            move("left")
+            # Лівий чорний → плавно вліво
+            move(70, 30)
         elif left == 1 and right == 0:
-            move("right")
+            # Правий чорний → плавно вправо
+            move(30, 70)
         else:
-            move("stop")
+            # Обидва білі → зупинка
+            stop()
 
         time.sleep(0.1)
 
 finally:
-    pwm1.stop()
-    pwm2.stop()
-    pwm3.stop()
-    pwm4.stop()
+    stop()
     GPIO.cleanup()
