@@ -32,10 +32,8 @@ def set_motor(dir_pin, pwm_obj, direction, speed):
     pwm_obj.ChangeDutyCycle(speed)
 
 def move(left_speed, right_speed):
-    # Ліві колеса
     set_motor(pins["DIR1"], pwm1, True, left_speed)
     set_motor(pins["DIR3"], pwm3, True, left_speed)
-    # Праві колеса
     set_motor(pins["DIR2"], pwm2, True, right_speed)
     set_motor(pins["DIR4"], pwm4, True, right_speed)
 
@@ -43,24 +41,39 @@ def stop():
     for pwm in [pwm1, pwm2, pwm3, pwm4]:
         pwm.ChangeDutyCycle(0)
 
+def sensor_state(value):
+    return "BLACK" if value == 1 else "WHITE"
+
 try:
-    print("Автономний режим: слідування по чорній лінії")
-    while True:
-        left = GPIO.input(LEFT_SENSOR)
-        right = GPIO.input(RIGHT_SENSOR)
+    mode = input("Виберіть режим: C - Калібрування, A - Автономний: ").strip().lower()
 
-        print(f"Left: {'BLACK' if left == 0 else 'WHITE'} | Right: {'BLACK' if right == 0 else 'WHITE'}")
+    if mode == "c":
+        print("Режим калібрування сенсорів (Ctrl+C для виходу)")
+        while True:
+            left = GPIO.input(LEFT_SENSOR)
+            right = GPIO.input(RIGHT_SENSOR)
+            print(f"RAW: Left={left}, Right={right} | Left: {sensor_state(left)} | Right: {sensor_state(right)}")
+            time.sleep(0.2)
 
-        if left == 0 and right == 0:
-            move(50, 50)  # прямо
-        elif left == 0 and right == 1:
-            move(70, 30)  # плавно вліво
-        elif left == 1 and right == 0:
-            move(30, 70)  # плавно вправо
-        else:
-            stop()  # обидва білі → стоп  у
+    elif mode == "a":
+        print("Автономний режим: слідування по чорній лінії")
+        while True:
+            left = GPIO.input(LEFT_SENSOR)
+            right = GPIO.input(RIGHT_SENSOR)
 
-        time.sleep(0.1)
+            print(f"Left: {sensor_state(left)} | Right: {sensor_state(right)}")
+
+            # Нова логіка: 1 = BLACK, 0 = WHITE
+            if left == 1 and right == 1:
+                move(50, 50)  # прямо
+            elif left == 1 and right == 0:
+                move(70, 30)  # плавно вліво
+            elif left == 0 and right == 1:
+                move(30, 70)  # плавно вправо
+            else:
+                stop()  # обидва білі → стоп
+
+            time.sleep(0.1)
 
 finally:
     stop()
