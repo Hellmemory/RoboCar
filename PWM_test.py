@@ -111,7 +111,7 @@ try:
             print("Вихід...")
             break
         else:
-            move("stop")  # Якщо нічого не натиснуто
+            move("stop")  # Якщо нічого не натиснуто    ж
 
         time.sleep(0.05)
 
