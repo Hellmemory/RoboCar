@@ -94,8 +94,7 @@ try:
 
         # Керування
         if keyboard.is_pressed("w"):
-            move("forward", speed)
-       ward", speed)
+            move("forward", speed) 
         elif keyboard.is_pressed("a"):
             move("left", speed)
         elif keyboard.is_pressed("d"):
