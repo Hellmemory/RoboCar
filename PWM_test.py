@@ -1,8 +1,9 @@
 import RPi.GPIO as GPIO
 import time
-import keyboard  # pip install keyboard
+import keyboard   # pip install keyboard
 
 GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
 
 # ------------------------------
 # Пины моторов
@@ -15,10 +16,11 @@ pins = {
 }
 
 # ------------------------------
-# Пины сенсоров
+# Сенсоры линии и расстояния
 # ------------------------------
 LEFT_SENSOR = 4
 RIGHT_SENSOR = 12
+
 TRIG = 20
 ECHO = 21
 
@@ -34,7 +36,9 @@ GPIO.setup(RIGHT_SENSOR, GPIO.IN)
 GPIO.setup(TRIG, GPIO.OUT)
 GPIO.setup(ECHO, GPIO.IN)
 
-# Создаем объекты PWM
+# ------------------------------
+# PWM
+# ------------------------------
 pwm1 = GPIO.PWM(pins["PWM1"], 100)
 pwm2 = GPIO.PWM(pins["PWM2"], 100)
 pwm3 = GPIO.PWM(pins["PWM3"], 100)
@@ -44,7 +48,7 @@ for p in [pwm1, pwm2, pwm3, pwm4]:
     p.start(0)
 
 # ------------------------------
-# Функции движения
+# Управление моторами
 # ------------------------------
 def set_motor(DIR, PWM, direction, speed):
     GPIO.output(DIR, direction)
@@ -79,60 +83,73 @@ def stop():
         p.ChangeDutyCycle(0)
 
 # ------------------------------
-# Ультразвук
+# Надёжная функция дистанции (с таймаутом)
 # ------------------------------
 def get_distance():
     GPIO.output(TRIG, False)
-    time.sleep(0.01)
+    time.sleep(0.002)
 
     GPIO.output(TRIG, True)
     time.sleep(0.00001)
     GPIO.output(TRIG, False)
 
+    timeout = time.time() + 0.02
+    pulse_start = None
+    pulse_end = None
+
+    # Ждём начала HIGH сигнала
     while GPIO.input(ECHO) == 0:
         pulse_start = time.time()
+        if time.time() > timeout:
+            return -1
 
+    timeout = time.time() + 0.02
+
+    # Ждём окончания HIGH сигнала
     while GPIO.input(ECHO) == 1:
         pulse_end = time.time()
+        if time.time() > timeout:
+            return -1
+
+    if pulse_start is None or pulse_end is None:
+        return -1
 
     duration = pulse_end - pulse_start
     distance = duration * 17150
+
     return round(distance, 2)
 
 # ------------------------------
-# Линия
+# Сенсоры линии
 # ------------------------------
 def read_line_sensors():
-    left = GPIO.input(LEFT_SENSOR)   # 0 = черная
-    right = GPIO.input(RIGHT_SENSOR) # 0 = черная
+    left = GPIO.input(LEFT_SENSOR)
+    right = GPIO.input(RIGHT_SENSOR)
     return left, right
 
 def follow_line(speed=40):
     left, right = read_line_sensors()
+    print(f"Line sensors: L={left} R={right}")
 
-    print(f"Left={left}  Right={right}")
-
+    # 0 = черная линия
     if left == 0 and right == 0:
         forward(speed)
     elif left == 0 and right == 1:
-        left_turn()
+        left(speed)
     elif left == 1 and right == 0:
-        right_turn()
+        right(speed)
     else:
         stop()
-
-def left_turn(speed=35):
-    left(speed)
-
-def right_turn(speed=35):
-    right(speed)
 
 # ------------------------------
 # Главный цикл
 # ------------------------------
-print("Управление: W A S D, Q — выход")
+print("Управление: W A S D | L - следовать линии | Q - выход")
+
 try:
     while True:
+
+        # Клавиши управления
         if keyboard.is_pressed('w'):
             forward()
         elif keyboard.is_pressed('s'):
@@ -141,14 +158,18 @@ try:
             left()
         elif keyboard.is_pressed('d'):
             right()
-        elif keyboard.is_pressed('l'):  # режим линии
+        elif keyboard.is_pressed('l'):
             follow_line()
+        elif keyboard.is_pressed('q'):
+            break
         else:
             stop()
 
+        # Чтение сенсоров
         dist = get_distance()
         ls, rs = read_line_sensors()
-        print(f"Dist: {dist} cm | Left={ls} Right={rs}")
+
+        print(f"Dist: {dist} cm | Line L={ls} R={rs}")
 
         time.sleep(0.05)
 
@@ -156,4 +177,5 @@ except KeyboardInterrupt:
     pass
 
 finally:
+    stop()
     GPIO.cleanup()
