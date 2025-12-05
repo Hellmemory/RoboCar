@@ -2,6 +2,7 @@ import RPi.GPIO as GPIO
 import time
 import curses
 
+# Настройка GPIO
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
@@ -55,60 +56,46 @@ def stop_all():
         p.ChangeDutyCycle(0)
 
 # ================================
-# curses — быстрый обработчик клавиш
+# Основной цикл
 # ================================
 def main(stdscr):
-    stdscr.nodelay(True)
+    # Настройки curses
+    stdscr.nodelay(True)  # Не блокировать программу, если нет нажатия
     stdscr.clear()
     stdscr.addstr(0, 0, "Управление: W A S D | Q — выход")
 
-    while True:
-        key = stdscr.getch()
+    speed_val = 60  # Базовая скорость
 
-        left = 0
-        right = 0
+    while True:
+        # Читаем клавишу ОДИН раз
+        key = stdscr.getch()
 
         if key == ord("q"):
             break
 
-        # Получаем ВСЕ нажатые клавиши
-        keys = curses.getsyx()  # фактически игнорируется, просто костыль
-        key = stdscr.getch()
+        left = 0
+        right = 0
 
-        # Лучше проверять через stdscr.getch многократно
-        pressed = []
-
-        # Проверяем все возможные клавиши (быстро очень)
-        for k in (ord('w'), ord('s'), ord('a'), ord('d')):
-            if stdscr.getch() == k:
-                pressed.append(chr(k))
-
-        # Вперёд
-        if 'w' in pressed:
-            left += 60
-            right += 60
-
-        # Назад
-        if 's' in pressed:
-            left -= 60
-            right -= 60
-
-        # Влево
-        if 'a' in pressed:
-            left -= 20
-            right += 20
-
-        # Вправо
-        if 'd' in pressed:
-            left += 20
-            right -= 20
-
-        # Ограничение
-        left = max(-100, min(100, left))
-        right = max(-100, min(100, right))
+        # Проверяем, какая клавиша была нажата (если нажата)
+        if key == ord('w'):       # Вперед
+            left = speed_val
+            right = speed_val
+        elif key == ord('s'):     # Назад
+            left = -speed_val
+            right = -speed_val
+        elif key == ord('a'):     # Влево (разворот на месте)
+            left = -speed_val
+            right = speed_val
+        elif key == ord('d'):     # Вправо (разворот на месте)
+            left = speed_val
+            right = -speed_val
+        else:
+            # Если ничего не нажато (key == -1), машина останавливается
+            left = 0
+            right = 0
 
         drive(left, right)
-        time.sleep(0.03)
+        time.sleep(0.05) # Небольшая задержка, чтобы не грузить процессор
 
 try:
     curses.wrapper(main)
