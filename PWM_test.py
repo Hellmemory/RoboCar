@@ -1,101 +1,195 @@
-
 import RPi.GPIO as GPIO
 import time
 
-# Налаштування GPIO
+# ==========================================
+# 1. КОНФИГУРАЦИЯ ПИНОВ (Ваши данные)
+# ==========================================
+
+# Установка режима нумерации пинов (BCM)
 GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+
+# Пины моторов
 pins = {
-    "DIR1": 17, "PWM1": 18,   # Переднє ліве
-    "DIR2": 22, "PWM2": 23,   # Переднє праве
-    "DIR3": 24, "PWM3": 25,   # Заднє ліве
-    "DIR4": 5,  "PWM4": 6     # Заднє праве
+    "DIR1": 17, "PWM1": 18,   # Переднее левое (Front Left)
+    "DIR2": 22, "PWM2": 23,   # Переднее правое (Front Right)
+    "DIR3": 24, "PWM3": 25,   # Заднее левое (Rear Left)
+    "DIR4": 5,  "PWM4": 6     # Заднее правое (Rear Right)
 }
 
-# Сенсори
+# Пины сенсоров
 LEFT_SENSOR = 4
 RIGHT_SENSOR = 12
+TRIG = 20
+ECHO = 21
 
-# Налаштування моторів
-for pin in pins.values():
-    GPIO.setup(pin, GPIO.OUT)
+# ==========================================
+# 2. ИНИЦИАЛИЗАЦИЯ (SETUP)
+# ==========================================
 
-# Сенсори
+# Настройка пинов моторов на выход
+for key in pins:
+    GPIO.setup(pins[key], GPIO.OUT)
+
+# Настройка пинов сенсоров
 GPIO.setup(LEFT_SENSOR, GPIO.IN)
 GPIO.setup(RIGHT_SENSOR, GPIO.IN)
+GPIO.setup(TRIG, GPIO.OUT)
+GPIO.setup(ECHO, GPIO.IN)
 
-# PWM для кожного колеса
-pwm1 = GPIO.PWM(pins["PWM1"], 100)
-pwm2 = GPIO.PWM(pins["PWM2"], 100)
-pwm3 = GPIO.PWM(pins["PWM3"], 100)
-pwm4 = GPIO.PWM(pins["PWM4"], 100)
+# Настройка ШИМ (PWM) - частота 1000 Гц
+pwm1 = GPIO.PWM(pins["PWM1"], 1000)
+pwm2 = GPIO.PWM(pins["PWM2"], 1000)
+pwm3 = GPIO.PWM(pins["PWM3"], 1000)
+pwm4 = GPIO.PWM(pins["PWM4"], 1000)
 
-for pwm in [pwm1, pwm2, pwm3, pwm4]:
-    pwm.start(0)
+# Запуск ШИМ с нулевой скоростью
+pwm1.start(0)
+pwm2.start(0)
+pwm3.start(0)
+pwm4.start(0)
 
-def set_motor(dir_pin, pwm_obj, direction, speed):
-    GPIO.output(dir_pin, GPIO.HIGH if direction else GPIO.LOW)
+# ==========================================
+# 3. ФУНКЦИИ ДВИЖЕНИЯ (Как в презентации)
+# ==========================================
+
+def set_motor(pwm_obj, dir_pin, speed, forward=True):
+    """
+    Универсальная функция управления одним мотором.
+    speed: 0-100
+    forward: True (вперед) или False (назад)
+    """
+    GPIO.output(dir_pin, GPIO.HIGH if forward else GPIO.LOW)
     pwm_obj.ChangeDutyCycle(speed)
 
-def stop_all():
-    for pwm in [pwm1, pwm2, pwm3, pwm4]:
-        pwm.ChangeDutyCycle(0)
+def stop():
+    """Остановка всех моторов"""
+    pwm1.ChangeDutyCycle(0)
+    pwm2.ChangeDutyCycle(0)
+    pwm3.ChangeDutyCycle(0)
+    pwm4.ChangeDutyCycle(0)
+    print("Робот остановлен")
 
-def move(action):
-    if action == "forward":
-        speed = 50
-        set_motor(pins["DIR1"], pwm1, True, speed)
-        set_motor(pins["DIR2"], pwm2, True, speed)
-        set_motor(pins["DIR3"], pwm3, True, speed)
-        set_motor(pins["DIR4"], pwm4, True, speed)
-    elif action == "backward":
-        speed = 50
-        set_motor(pins["DIR1"], pwm1, False, speed)
-        set_motor(pins["DIR2"], pwm2, False, speed)
-        set_motor(pins["DIR3"], pwm3, False, speed)
-        set_motor(pins["DIR4"], pwm4, False, speed)
-    elif action == "left":
-        # всі колеса вперед, але права сторона швидше
-        left_speed = 50
-        right_speed = 100
-        set_motor(pins["DIR1"], pwm1, True, left_speed)
-        set_motor(pins["DIR3"], pwm3, True, left_speed)
-        set_motor(pins["DIR2"], pwm2, True, right_speed)
-        set_motor(pins["DIR4"], pwm4, True, right_speed)
-    elif action == "right":
-        # всі колеса вперед, але ліва сторона швидше
-        left_speed = 100
-        right_speed = 50
-        set_motor(pins["DIR1"], pwm1, True, left_speed)
-        set_motor(pins["DIR3"], pwm3, True, left_speed)
-        set_motor(pins["DIR2"], pwm2, True, right_speed)
-        set_motor(pins["DIR4"], pwm4, True, right_speed)
-    elif action == "stop":
-        stop_all()
+def move_forward(speed=50):
+    """Движение вперед всеми 4 колесами"""
+    # Левая сторона
+    set_motor(pwm1, pins["DIR1"], speed, forward=True) # FL
+    set_motor(pwm3, pins["DIR3"], speed, forward=True) # RL
+    # Правая сторона
+    set_motor(pwm2, pins["DIR2"], speed, forward=True) # FR
+    set_motor(pwm4, pins["DIR4"], speed, forward=True) # RR
+    print(f"Вперед со скоростью {speed}")
+
+def move_backward(speed=50):
+    """Движение назад"""
+    # Левая сторона
+    set_motor(pwm1, pins["DIR1"], speed, forward=False)
+    set_motor(pwm3, pins["DIR3"], speed, forward=False)
+    # Правая сторона
+    set_motor(pwm2, pins["DIR2"], speed, forward=False)
+    set_motor(pwm4, pins["DIR4"], speed, forward=False)
+    print(f"Назад со скоростью {speed}")
+
+def turn_left(speed=40):
+    """Поворот влево (танковый разворот)"""
+    # Левая назад
+    set_motor(pwm1, pins["DIR1"], speed, forward=False)
+    set_motor(pwm3, pins["DIR3"], speed, forward=False)
+    # Правая вперед
+    set_motor(pwm2, pins["DIR2"], speed, forward=True)
+    set_motor(pwm4, pins["DIR4"], speed, forward=True)
+    print("Поворот влево")
+
+def turn_right(speed=40):
+    """Поворот вправо (танковый разворот)"""
+    # Левая вперед
+    set_motor(pwm1, pins["DIR1"], speed, forward=True)
+    set_motor(pwm3, pins["DIR3"], speed, forward=True)
+    # Правая назад
+    set_motor(pwm2, pins["DIR2"], speed, forward=False)
+    set_motor(pwm4, pins["DIR4"], speed, forward=False)
+    print("Поворот вправо")
+
+# ==========================================
+# 4. ФУНКЦИИ СЕНСОРОВ
+# ==========================================
+
+def get_distance():
+    """Получение дистанции с ультразвукового датчика (см)"""
+    GPIO.output(TRIG, False)
+    time.sleep(0.05) # Небольшая задержка для стабилизации
+
+    GPIO.output(TRIG, True)
+    time.sleep(0.00001) # Импульс 10 мкс
+    GPIO.output(TRIG, False)
+
+    pulse_start = time.time()
+    pulse_end = time.time()
+
+    # Ждем начала эха (Low -> High)
+    timeout = time.time() + 0.1
+    while GPIO.input(ECHO) == 0:
+        pulse_start = time.time()
+        if pulse_start > timeout: return -1
+
+    # Ждем конца эха (High -> Low)
+    while GPIO.input(ECHO) == 1:
+        pulse_end = time.time()
+        if pulse_end > timeout: return -1
+
+    pulse_duration = pulse_end - pulse_start
+    distance = pulse_duration * 17150 # Скорость звука / 2
+    return round(distance, 2)
+
+def read_line_sensors():
+    """Возвращает кортеж (Left, Right). 0 - белое, 1 - черное (обычно)"""
+    left_val = GPIO.input(LEFT_SENSOR)
+    right_val = GPIO.input(RIGHT_SENSOR)
+    return left_val, right_val
+
+# ==========================================
+# 5. ОСНОВНОЙ ЦИКЛ (Тест как в презентации)
+# ==========================================
 
 try:
-    print("Керування: W-вперед (50), S-назад (50), A-вліво (100), D-вправо (100), X-стоп, Q-вихід")
+    print("Тест системы запущен...")
+    
+    # Пример 1: Проверка дистанции
+    dist = get_distance()
+    print(f"Дистанция до препятствия: {dist} см")
+    
+    # Пример 2: Движение (логика Day 1.3)
+    # Едем вперед 2 секунды
+    move_forward(50) 
+    time.sleep(2)
+    
+    # Останавливаемся
+    stop()
+    time.sleep(1)
+    
+    # Разворот вправо 1 секунду
+    turn_right(60)
+    time.sleep(1)
+    
+    stop()
+    
+    # Пример 3: Тест датчиков линии
+    print("Чтение датчиков линии (Ctrl+C для выхода):")
     while True:
-        # Читання сенсорів (інформація)
-        left = GPIO.input(LEFT_SENSOR)
-        right = GPIO.input(RIGHT_SENSOR)
-        print(f"Left: {'BLACK' if left == 0 else 'WHITE'} | Right: {'BLACK' if right == 0 else 'WHITE'}")
+        l, r = read_line_sensors()
+        print(f"Line Sensors -> L: {l}, R: {r}")
+        time.sleep(0.2)
 
-        cmd = input("Введіть команду: ").strip().lower()
-        if cmd == "w":
-            move("forward")
-        elif cmd == "s":
-            move("backward")
-        elif cmd == "a":
-            move("left")
-        elif cmd == "d":
-            move("right")
-        elif cmd == "x":
-            move("stop")
-        elif cmd == "q":
-            print("Вихід...")
-            break
-        else:
-            print("Невідома команда!")
+except KeyboardInterrupt:
+    print("\nПрограмма остановлена пользователем")
+    stop()
+    GPIO.cleanup()
+    
+except Exception as e:
+    print(f"Ошибка: {e}")
+    stop()
+    GPIO.cleanup()
 finally:
-    stop_all()
+    # Всегда очищаем пины при выходе
+    stop()
     GPIO.cleanup()
