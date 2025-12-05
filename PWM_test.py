@@ -11,7 +11,7 @@ pins = {
     "DIR4": 5,  "PWM4": 6     # Заднє праве
 }
 
-# Сенсори
+# Сенсори (залишаємо для тесту)
 LEFT_SENSOR = 4
 RIGHT_SENSOR = 12
 
@@ -19,7 +19,7 @@ RIGHT_SENSOR = 12
 for pin in pins.values():
     GPIO.setup(pin, GPIO.OUT)
 
-# Налаштування сенсорів
+# Сенсори
 GPIO.setup(LEFT_SENSOR, GPIO.IN)
 GPIO.setup(RIGHT_SENSOR, GPIO.IN)
 
@@ -36,23 +36,27 @@ def set_motor(dir_pin, pwm_obj, direction, speed):
     GPIO.output(dir_pin, direction)
     pwm_obj.ChangeDutyCycle(speed)
 
-def move(action, speed=55):  # Зменшена швидкість
+def move(action):
     if action == "forward":
+        speed = 50  # 50% для вперед
         set_motor(pins["DIR1"], pwm1, True, speed)
         set_motor(pins["DIR2"], pwm2, True, speed)
         set_motor(pins["DIR3"], pwm3, True, speed)
         set_motor(pins["DIR4"], pwm4, True, speed)
     elif action == "backward":
+        speed = 50  # 50% для назад
         set_motor(pins["DIR1"], pwm1, False, speed)
         set_motor(pins["DIR2"], pwm2, False, speed)
         set_motor(pins["DIR3"], pwm3, False, speed)
         set_motor(pins["DIR4"], pwm4, False, speed)
     elif action == "left":
+        speed = 100  # 100% для повороту
         set_motor(pins["DIR1"], pwm1, False, speed)
         set_motor(pins["DIR2"], pwm2, True, speed)
         set_motor(pins["DIR3"], pwm3, False, speed)
         set_motor(pins["DIR4"], pwm4, True, speed)
     elif action == "right":
+        speed = 100  # 100% для повороту
         set_motor(pins["DIR1"], pwm1, True, speed)
         set_motor(pins["DIR2"], pwm2, False, speed)
         set_motor(pins["DIR3"], pwm3, True, speed)
@@ -62,9 +66,9 @@ def move(action, speed=55):  # Зменшена швидкість
             pwm.ChangeDutyCycle(0)
 
 try:
-    print("Керування: W-вперед, S-назад, A-вліво, D-вправо, X-стоп, Q-вихід")
+    print("Керування: W-вперед (50%), S-назад (50%), A-вліво (100%), D-вправо (100%), X-стоп, Q-вихід")
     while True:
-        # Читання сенсорів
+        # Читання сенсорів (для інформації)
         left = GPIO.input(LEFT_SENSOR)
         right = GPIO.input(RIGHT_SENSOR)
         print(f"Left: {'BLACK' if left == 0 else 'WHITE'} | Right: {'BLACK' if right == 0 else 'WHITE'}")
