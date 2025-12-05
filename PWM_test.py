@@ -16,7 +16,7 @@ pins = {
     "DIR4": 5,  "PWM4": 6     # Заднє праве
 }
 
-# Сенсори
+# Сенсори (залишаємо для моніторингу)
 LEFT_SENSOR = 4
 RIGHT_SENSOR = 12
 
@@ -97,10 +97,10 @@ try:
                 left_speed = turn_speed
 
             # Застосовуємо швидкості (всі колеса в одному напрямку)
-            set_motor(pins["DIR1"], pwm1, direction, left_speed)
-            set_motor(pins["DIR3"], pwm3, direction, left_speed)
-            set_motor(pins["DIR2"], pwm2, direction, right_speed)
-            set_motor(pins["DIR4"], pwm4, direction, right_speed)
+            set_motor(pins["DIR1"], pwm1, direction, left_speed)   # Переднє ліве
+            set_motor(pins["DIR3"], pwm3, direction, left_speed)   # Заднє ліве
+            set_motor(pins["DIR2"], pwm2, direction, right_speed)  # Переднє праве
+            set_motor(pins["DIR4"], pwm4, direction, right_speed)  # Заднє праве
 
         time.sleep(0.05)
 
