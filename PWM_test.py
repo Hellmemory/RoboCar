@@ -10,25 +10,21 @@ GPIO.setmode(GPIO.BCM)
 
 # Піни для моторів
 pins = {
-    "DIR1": 17, "PWM1": 18,  # Ліве переднє
-    "DIR2": 22, "PWM2": 23,  # Ліве заднє
-    "DIR3": 24, "PWM3": 25,  # Праве переднє
-    "DIR4": 5,  "PWM4": 6    # Праве заднє
+    "DIR1": 17, "PWM1": 18,   # Переднє ліве
+    "DIR2": 22, "PWM2": 23,   # Переднє праве
+    "DIR3": 24, "PWM3": 25,   # Заднє ліве
+    "DIR4": 5,  "PWM4": 6     # Заднє праве
 }
 
 # Сенсори
 LEFT_SENSOR = 4
 RIGHT_SENSOR = 12
-TRIG = 20
-ECHO = 21
 
 # Налаштування пінів
 for pin in pins.values():
     GPIO.setup(pin, GPIO.OUT)
 GPIO.setup(LEFT_SENSOR, GPIO.IN)
 GPIO.setup(RIGHT_SENSOR, GPIO.IN)
-GPIO.setup(TRIG, GPIO.OUT)
-GPIO.setup(ECHO, GPIO.IN)
 
 # PWM
 pwm1 = GPIO.PWM(pins["PWM1"], 100)
@@ -47,23 +43,6 @@ def stop_all():
     for pwm in [pwm1, pwm2, pwm3, pwm4]:
         pwm.ChangeDutyCycle(0)
 
-def get_distance():
-    GPIO.output(TRIG, True)
-    time.sleep(0.00001)
-    GPIO.output(TRIG, False)
-
-    start = time.time()
-    stop = time.time()
-
-    while GPIO.input(ECHO) == 0:
-        start = time.time()
-    while GPIO.input(ECHO) == 1:
-        stop = time.time()
-
-    elapsed = stop - start
-    distance = (elapsed * 34300) / 2
-    return distance
-
 # Неблокуюче читання клавіш
 def get_key():
     dr, dw, de = select.select([sys.stdin], [], [], 0)
@@ -75,7 +54,7 @@ old_settings = termios.tcgetattr(sys.stdin)
 tty.setcbreak(sys.stdin.fileno())
 
 try:
-    print("Ручний режим: W/S/A/D для руху, X - стоп, Q - вихід")
+    print("Керування: W-вперед, S-назад, A-вліво, D-вправо, X-стоп, Q-вихід")
     while True:
         key = get_key()
         keys_pressed = []
@@ -87,8 +66,7 @@ try:
         # Читаємо сенсори
         left = GPIO.input(LEFT_SENSOR)
         right = GPIO.input(RIGHT_SENSOR)
-        dist = get_distance()
-        print(f"Left: {'BLACK' if left else 'WHITE'} | Right: {'BLACK' if right else 'WHITE'} | Distance: {dist:.1f} cm")
+        print(f"Left: {'BLACK' if left == 0 else 'WHITE'} | Right: {'BLACK' if right == 0 else 'WHITE'}")
 
         if "q" in keys_pressed:
             print("Вихід...")
@@ -97,7 +75,6 @@ try:
         if "x" in keys_pressed or not keys_pressed:
             stop_all()
         else:
-            # Базові швидкості
             forward_speed = 50
             turn_speed = 90
 
@@ -109,7 +86,7 @@ try:
             else:
                 direction = True  # чистий поворот вперед
 
-            # Швидкості для лівої та правої сторони
+            # Базові швидкості
             left_speed = forward_speed
             right_speed = forward_speed
 
@@ -121,8 +98,8 @@ try:
 
             # Застосовуємо швидкості (всі колеса в одному напрямку)
             set_motor(pins["DIR1"], pwm1, direction, left_speed)
-            set_motor(pins["DIR2"], pwm2, direction, left_speed)
-            set_motor(pins["DIR3"], pwm3, direction, right_speed)
+            set_motor(pins["DIR3"], pwm3, direction, left_speed)
+            set_motor(pins["DIR2"], pwm2, direction, right_speed)
             set_motor(pins["DIR4"], pwm4, direction, right_speed)
 
         time.sleep(0.05)
