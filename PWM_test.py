@@ -1,31 +1,24 @@
+
 import RPi.GPIO as GPIO
 import time
-import sys
-import termios
-import tty
-import select
 
 GPIO.setmode(GPIO.BCM)
-
-# Піни для моторів
 pins = {
-    "DIR1": 17, "PWM1": 18,   # Переднє ліве
-    "DIR2": 22, "PWM2": 23,   # Переднє праве
-    "DIR3": 24, "PWM3": 25,   # Заднє ліве
-    "DIR4": 5,  "PWM4": 6     # Заднє праве
+    "DIR1": 17, "PWM1": 18,
+    "DIR2": 22, "PWM2": 23,
+    "DIR3": 24, "PWM3": 25,
+    "DIR4": 5,  "PWM4": 6
 }
 
-# Сенсори (залишаємо для моніторингу)
 LEFT_SENSOR = 4
 RIGHT_SENSOR = 12
 
-# Налаштування пінів
 for pin in pins.values():
     GPIO.setup(pin, GPIO.OUT)
+
 GPIO.setup(LEFT_SENSOR, GPIO.IN)
 GPIO.setup(RIGHT_SENSOR, GPIO.IN)
 
-# PWM
 pwm1 = GPIO.PWM(pins["PWM1"], 100)
 pwm2 = GPIO.PWM(pins["PWM2"], 100)
 pwm3 = GPIO.PWM(pins["PWM3"], 100)
@@ -35,75 +28,54 @@ for pwm in [pwm1, pwm2, pwm3, pwm4]:
     pwm.start(0)
 
 def set_motor(dir_pin, pwm_obj, direction, speed):
-    GPIO.output(dir_pin, GPIO.HIGH if direction else GPIO.LOW)
+    GPIO.output(dir_pin, direction)
     pwm_obj.ChangeDutyCycle(speed)
 
-def stop_all():
-    for pwm in [pwm1, pwm2, pwm3, pwm4]:
-        pwm.ChangeDutyCycle(0)
-
-# Неблокуюче читання клавіш
-def get_key():
-    dr, dw, de = select.select([sys.stdin], [], [], 0)
-    if dr:
-        return sys.stdin.read(1)
-
-# Налаштування терміналу
-old_settings = termios.tcgetattr(sys.stdin)
-tty.setcbreak(sys.stdin.fileno())
+def move(action):
+    if action == "forward":
+        speed = 50
+        set_motor(pins["DIR1"], pwm1, True, speed)
+        set_motor(pins["DIR2"], pwm2, True, speed)
+        set_motor(pins["DIR3"], pwm3, True, speed)
+        set_motor(pins["DIR4"], pwm4, True, speed)
+    elif action == "left":
+        speed = 100
+        set_motor(pins["DIR1"], pwm1, False, speed)
+        set_motor(pins["DIR2"], pwm2, True, speed)
+        set_motor(pins["DIR3"], pwm3, False, speed)
+        set_motor(pins["DIR4"], pwm4, True, speed)
+    elif action == "right":
+        speed = 100
+        set_motor(pins["DIR1"], pwm1, True, speed)
+        set_motor(pins["DIR2"], pwm2, False, speed)
+        set_motor(pins["DIR3"], pwm3, True, speed)
+        set_motor(pins["DIR4"], pwm4, False, speed)
+    elif action == "stop":
+        for pwm in [pwm1, pwm2, pwm3, pwm4]:
+            pwm.ChangeDutyCycle(0)
 
 try:
-    print("Керування: W-вперед, S-назад, A-вліво, D-вправо, X-стоп, Q-вихід")
+    print("Автономний режим: слідування по чорній лінії")
     while True:
-        key = get_key()
-        keys_pressed = []
-
-        while key:
-            keys_pressed.append(key.lower())
-            key = get_key()
-
-        # Читаємо сенсори
         left = GPIO.input(LEFT_SENSOR)
         right = GPIO.input(RIGHT_SENSOR)
+
         print(f"Left: {'BLACK' if left == 0 else 'WHITE'} | Right: {'BLACK' if right == 0 else 'WHITE'}")
 
-        if "q" in keys_pressed:
-            print("Вихід...")
-            break
-
-        if "x" in keys_pressed or not keys_pressed:
-            stop_all()
+        if left == 0 and right == 0:
+            move("forward")
+        elif left == 0 and right == 1:
+            move("left")
+        elif left == 1 and right == 0:
+            move("right")
         else:
-            forward_speed = 50
-            turn_speed = 90
+            move("stop")
 
-            # Напрямок руху
-            if "w" in keys_pressed:
-                direction = True  # вперед
-            elif "s" in keys_pressed:
-                direction = False  # назад
-            else:
-                direction = True  # чистий поворот вперед
-
-            # Базові швидкості
-            left_speed = forward_speed
-            right_speed = forward_speed
-
-            # Повороти
-            if "a" in keys_pressed:  # вліво
-                right_speed = turn_speed
-            elif "d" in keys_pressed:  # вправо
-                left_speed = turn_speed
-
-            # Застосовуємо швидкості (всі колеса в одному напрямку)
-            set_motor(pins["DIR1"], pwm1, direction, left_speed)   # Переднє ліве
-            set_motor(pins["DIR3"], pwm3, direction, left_speed)   # Заднє ліве
-            set_motor(pins["DIR2"], pwm2, direction, right_speed)  # Переднє праве
-            set_motor(pins["DIR4"], pwm4, direction, right_speed)  # Заднє праве
-
-        time.sleep(0.05)
+        time.sleep(0.1)
 
 finally:
-    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
-    stop_all()
+    pwm1.stop()
+    pwm2.stop()
+    pwm3.stop()
+    pwm4.stop()
     GPIO.cleanup()
