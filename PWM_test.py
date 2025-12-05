@@ -6,7 +6,7 @@ import tty
 import termios
 
 # ==========================================
-# 1. КОНФИГУРАЦИЯ ПИНОВ
+# 1. КОНФІГУРАЦІЯ ПІНІВ
 # ==========================================
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
@@ -22,7 +22,7 @@ LEFT_SENSOR = 4
 RIGHT_SENSOR = 12
 
 # ==========================================
-# 2. ИНИЦИАЛИЗАЦИЯ
+# 2. ІНІЦІАЛІЗАЦІЯ
 # ==========================================
 for key in pins:
     GPIO.setup(pins[key], GPIO.OUT)
@@ -39,7 +39,7 @@ for p in [pwm1, pwm2, pwm3, pwm4]:
     p.start(0)
 
 # ==========================================
-# 3. ФУНКЦИИ ДВИЖЕНИЯ
+# 3. ФУНКЦІЇ РУХУ
 # ==========================================
 def set_motor(pwm_obj, dir_pin, speed, forward=True):
     GPIO.output(dir_pin, GPIO.HIGH if forward else GPIO.LOW)
@@ -74,7 +74,7 @@ def turn_right(speed=45):
     set_motor(pwm4, pins["DIR4"], speed, False)
 
 # ==========================================
-# 4. КАЛИБРОВКА СЕНСОРОВ
+# 4. КАЛІБРУВАННЯ СЕНСОРІВ
 # ==========================================
 def calibrate_sensor(pin, samples=50):
     total = 0
@@ -83,17 +83,17 @@ def calibrate_sensor(pin, samples=50):
         time.sleep(0.002)
     return total / samples
 
-print("Калибровка сенсоров...")
+print("Калібрування сенсорів...")
 left_threshold = calibrate_sensor(LEFT_SENSOR)
 right_threshold = calibrate_sensor(RIGHT_SENSOR)
 print(f"Пороги: Left={left_threshold:.2f}, Right={right_threshold:.2f}")
 
 # ==========================================
-# 5. ЛОГИКА СЕНСОРОВ ЛИНИИ
+# 5. РЕЖИМ СЛІДУВАННЯ ПО ЛІНІЇ
 # ==========================================
 def line_follower_loop():
-    print("\n--- ЗАПУСК ПО ЛИНИИ ---")
-    print("Нажмите CTRL+C для остановки")
+    print("\n--- РЕЖИМ ЛІНІЇ ---")
+    print("Натисніть CTRL+C для виходу")
     
     SPEED_FWD = 35
     SPEED_TURN = 45
@@ -103,7 +103,6 @@ def line_follower_loop():
             l_val = GPIO.input(LEFT_SENSOR)
             r_val = GPIO.input(RIGHT_SENSOR)
 
-            # Сравнение с порогами
             l_black = l_val >= left_threshold
             r_black = r_val >= right_threshold
 
@@ -120,14 +119,40 @@ def line_follower_loop():
 
     except KeyboardInterrupt:
         stop()
-        print("\nОстановка режима линии.")
+        print("\nВихід з режиму лінії.")
 
 # ==========================================
-# 6. РУЧНОЕ УПРАВЛЕНИЕ
-#    print("W - Вперед | S - Назад")
-    print("A - Влево  | D - Вправо")
-    print("Пробел - Стоп | Q - Выход в меню")
+# 6. РУЧНЕ УПРАВЛІННЯ
+# ==========================================
+def getch():
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(fd)
+        ch = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    return ch
+
+def manual_control_loop():
+    print("\n--- РУЧНИЙ РЕЖИМ ---")
+    print("W - Вперед | S - Назад")
+    print("A - Вліво  | D - Вправо")
+    print("Пробіл - Стоп | Q - Вихід")
     
+    try:
+        while True:
+            char = getch()
+            if char == "w":
+                move_forward(60)
+            elif char == "s":
+                move_backward(60)
+            elif char == "a":
+                turn_left(50)
+            elif char == "d":
+                turn_right(50)
+            elif char == " ":
+                stop()
             elif char == "q":
                 stop()
                 break
@@ -137,29 +162,29 @@ def line_follower_loop():
         stop()
 
 # ==========================================
-# 7. МЕНЮ
+# 7. ГОЛОВНЕ МЕНЮ
 # ==========================================
 try:
     while True:
         print("\n=== МЕНЮ РОБОТА ===")
-        print("1. Ручное управление (WASD)")
-        print("2. Езда по черной линии")
-        print("3. Выход")
+        print("1. Ручне управління (WASD)")
+        print("2. Їзда по чорній лінії")
+        print("3. Вихід")
         
-        choice = input("Выберите режим (1-3): ")
+        choice = input("Виберіть режим (1-3): ")
         
         if choice == "1":
             manual_control_loop()
         elif choice == "2":
             line_follower_loop()
         elif choice == "3":
-            print("Выход...")
+            print("Вихід...")
             break
         else:
-            print("Неверный ввод.")
+            print("Невірний вибір.")
 
 except Exception as e:
-    print(f"Ошибка: {e}")
+    print(f"Помилка: {e}")
 
 finally:
     stop()
